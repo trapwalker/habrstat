@@ -1,3 +1,4 @@
+#! /usr/bin/python3
 
 import requests
 from html.parser import HTMLParser
@@ -85,11 +86,11 @@ class HabrStatParser(ExtHTMLParser):
         no_metrics = set(self.__dict__.keys())
         self.time = datetime.datetime.utcnow()
         self.user = user
-        self.karma_votes_count = None
-        self.karma_value = None
-        self.rating_value = None
-        self.subscribers_value = None
-        self.subscribes_value = None
+        self.votes = None
+        self.karma = None
+        self.rating = None
+        self.subscribers = None
+        self.subscribes = None
         self._metrics = set(self.__dict__.keys()) - no_metrics
 
     def log_line(self):
@@ -100,13 +101,13 @@ class HabrStatParser(ExtHTMLParser):
         super().handle_starttag(tag, attrs)
         attrs = dict(attrs)
 
-        if self.karma_votes_count is None and self.path[-2:] == [
+        if self.votes is None and self.path[-2:] == [
                 Node('div.media-obj__body.media-obj__body_user-info'),
                 Node('a.user-info__stats-item.stacked-counter'),
         ]:
             title = attrs.get('title', '')
             karma = re.match(r'(?P<votes>\d+)\s+голо.*', title)
-            self.karma_votes_count = int(karma.groups()[0])
+            self.votes = int(karma.groups()[0])
 
     @staticmethod
     def cast_float(s: str):
@@ -121,15 +122,15 @@ class HabrStatParser(ExtHTMLParser):
                 Node('a.user-info__stats-item.stacked-counter'),
                 Node('div.stacked-counter__value'),
         ]:
-            if self.karma_value is None:
-                self.karma_value = self.cast_float(data)
+            if self.karma is None:
+                self.karma = self.cast_float(data)
             elif self.path[-2] == Node('a.stacked-counter_rating'):
-                self.rating_value = self.cast_float(data)
+                self.rating = self.cast_float(data)
             elif self.path[-2] == Node('a.stacked-counter_subscribers'):
-                if self.subscribers_value is None:
-                    self.subscribers_value = int(data)
+                if self.subscribers is None:
+                    self.subscribers = int(data)
                 else:
-                    self.subscribes_value = int(data)
+                    self.subscribes = int(data)
 
 
 def get_habr_stat(user, site='https://habr.com', lang='ru'):
